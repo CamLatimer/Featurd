@@ -1,0 +1,26 @@
+{
+  "name": "featurd",
+  "version": "1.0.0",
+  "description": "Rappers, DJ's, and other musicians often collaborate with one another. Songs often include 'features' from other musicians. For the curious, this app is intended to be a quick way to look up who has worked with who, and check out a visual representation of an artist's network.",
+  "main": "index.js",
+  "scripts": {
+    "test": "NODE_ENV=test mocha",
+    "dev": "nodemon index.js",
+    "start": "node index.js"
+  },
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "chai": "^4.1.2",
+    "chai-http": "^4.0.0",
+    "mocha": "^5.2.0",
+    "nodemon": "^1.18.3"
+  },
+  "dependencies": {
+    "body-parser": "^1.18.3",
+    "dotenv-safe": "^6.0.0",
+    "ejs": "^2.6.1",
+    "express": "^4.16.3",
+    "morgan": "^1.9.0"
+  }
+}
