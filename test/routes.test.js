@@ -36,23 +36,35 @@ describe('Routes', function() {
         .get('/search/Frank+Ocean')
           .end(function(err, res) {
             expect(err).to.be.null;
-            expect(res).to.be.json;
-            expect(res).to.have.status(200);
+            expect(res.body.status).to.equal(200);
             done();
           });
 
     })
 
-    it('/features/:artistName', function(done) {
+    it('/features/:artistId', function(done) {
 
       chai.request(app)
-        .get(`/features/Migos`)
+        .get(`/features/3TVXtAsR1Inumwj472S9r4`)
           .end(function(err, res) {
             expect(err).to.be.null;
-            expect(res).to.be.json;
-            expect(res).to.have.status(200);
+            expect(res.body.status).to.equal(200);
             done();
           });
+    })
+
+    describe('Should handle errors', function() {
+
+      it('Has a bad url', function(done){
+        chai.request(app)
+          .get(`/searc`)
+            .end(function(err, res) {
+              expect(res).to.be.json;
+              expect(res.error.status).to.equal(404);
+              done();
+            });
+      })
+
     })
 
 });

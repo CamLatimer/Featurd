@@ -27,7 +27,7 @@ let baseOpts = {
       }
 };
 
-
+// authenticate with spotify
 function setAuth(){
   return new Promise((resolve, reject) => {
     axios(authOpts)
@@ -44,28 +44,36 @@ function setAuth(){
 // initial user search for artists
 function searchArtists(req, res, next){
 
-
   let opts = baseOpts;
-  let url = `https://api.spotify.com/v1/search?q=${req.params.artistName}&type=artist`;
-  opts.url = url;
+  let url = `https://api.spotify.com/v1/search?q=${req.params.artistName}&type=artist&limit=50`;
 
-  function lookupArtists(){
+  let artistItems = [];
+
+  lookupArtists(url);
+
+
+  function lookupArtists(searchUrl){
+
+    opts.url = searchUrl;
+
     axios(opts)
       .then((response) => {
-        res.json(response.data);
-      }).catch((err) => {
-        console.log(err.message + ' from searchArtists');
-        if(err.status === 401 || 400){
-          setAuth().then(() => {
-            lookupArtists();
-          })
-        } else {
+        if(response.data.artists.items.length === 0){
+          let err = new Error('oops! No artists matched your search');
           next(err);
-        }
+        } else {
+            artistItems = artistItems.concat(response.data.artists.items);
+            if(response.data.artists.next === null) {
+              res.json({status: response.status, artists: artistItems});
+            } else {
+              lookupArtists(response.data.artists.next);
+            }
+          }
+      }).catch((err) => {
+        let error = err.response.data.error;
+        reset(error, lookupArtists, url, next);
       });
   }
-
-  lookupArtists();
 
 }
 
@@ -73,27 +81,47 @@ function searchArtists(req, res, next){
 function getFeatures(req, res, next){
 
   let opts = baseOpts;
-  opts.url = `https://api.spotify.com/v1/search?q=${req.params.artistName}&type=track`;
+  url = `https://api.spotify.com/v1/artists/${req.params.artistId}/albums?include_groups=appears_on&limit=50&market=US`;
+  let albums = [];
+  lookupFeatures(url);
 
-  function lookupFeatures(){
+  function lookupFeatures(searchUrl){
+
+    opts.url = searchUrl;
+
     axios(opts)
       .then((response) => {
-        res.json(response.data);
-      }).catch((err) => {
-        console.log(err.message + ' from searchArtists');
-        if(err.status === 401 || 400){
-          setAuth().then(() => {
-            lookupArtists();
-          })
-        } else {
+        if(response.data.items.length === 0){
+          let err = new Error('oops! No artists matched your search');
           next(err);
-        }
+        } else {
+            albums = albums.concat(response.data.items);
+            if(response.data.next === null) {
+              res.json({status: response.status, albums: albums});
+            } else {
+              lookupFeatures(response.data.next);
+            }
+          }
+      }).catch((err) => {
+        let error = err.response.data.error;
+        reset(error, lookupFeatures, searchUrl, next)
       });
   }
-
-  lookupFeatures();
 }
 
+// re-authenticate with spotify if token was expired/invalid
+function reset(err, ogCall, url, nextFunc){
+  if(err.message === 'Only valid bearer authentication supported'){
+    setAuth().then(() => {
+      ogCall(url);
+    }).catch((err) => {
+      nextFunc(err);
+    });
+  } else {
+    console.log(err);
+    nextFunc(err);
+  }
+}
 
 module.exports = {
   authOpts,
