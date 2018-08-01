@@ -27,26 +27,33 @@ app.use(bodyParser.json());
 // routes
 app.get('/', (req, res) => { res.render('home', {hello: 'hey man'}) });
 app.get('/search/:artistName', spotify.searchArtists);
-app.get('/features/:artistName', spotify.getFeatures);
+app.get('/features/:artistId', spotify.getFeatures);
 
 
-if(process.env.NODE_ENV !== 'production') {
-
-// error handler
-app.use((err, req, res, next) => {
-  res.status(err.status || 500);
-  res.render('error', {
-    message: err.message,
-    error: {}
-  });
+// error handling
+app.use(function(req, res, next){
+   let err = new Error(`Oops! We didn't find anything! Please go back...`);
+   err.status = 404;
+   next(err);
 });
 
-};
+app.use((err, req, res, next) => {
+  if (res.headersSent) {
+    return next(err)
+  }
+  res.status = err.status || 500;
+  res.json({
+    error: {
+      status: res.status,
+      message: err.message
+    }
+  })
+});
 
-if(process.env.NODE_ENV !== 'test'){
+if(process.env.NODE_ENV == 'test'){
+  module.exports = { app };
+} else {
   app.listen(process.env.PORT || 8080, () => {
       console.log('The application is running!');
   });
-};
-
-module.exports = { app }
+}
