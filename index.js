@@ -6,7 +6,9 @@ const app = express();
 const bodyParser = require('body-parser');
 const spotify = require('./spotify');
 const axios = require('axios');
-
+const Bundler = require('parcel-bundler');
+const bundleOpts = require('./bundleConfig');
+const bundleJs = new Bundler(__dirname + '/dist/js/entry.js', bundleOpts);
 
 if(process.env.NODE_ENV !== 'test') {
   // log req/res info
@@ -16,18 +18,19 @@ if(process.env.NODE_ENV !== 'test') {
   spotify.setAuth();
 }
 
-
 // middleware
-app.use('/dist', express.static('dist'))
+app.use(express.static('dist'));
 app.set('view engine', 'ejs');
 app.use(bodyParser.urlencoded({ extended: false}))
 app.use(bodyParser.json());
+if(process.env.NODE_ENV === 'development'){ app.use(bundleJs.middleware()); }
 
 
 // routes
 app.get('/', (req, res) => { res.render('home', {hello: 'hey man'}) });
 app.get('/search/:artistName', spotify.searchArtists);
 app.get('/features/:artistId', spotify.getFeatures);
+
 
 
 // error handling
